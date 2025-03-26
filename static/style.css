@@ -1,0 +1,221 @@
+/* Общие стили */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #000; /* Черный фон */
+    color: #FFD700; /* Желтый текст */
+    margin: 0;
+    padding: 0;
+}
+
+/* Заголовок на главной странице */
+.header-section {
+    background-color: #001f3f; /* Темно-синий фон */
+    color: #FFD700; /* Желтый текст */
+    text-align: center;
+    padding: 50px 20px;
+}
+
+/* === Карточки на главной странице (с анимацией) === */
+.service-card {
+    background: #001f3f; /* Темно-синий фон */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    text-decoration: none;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+}
+
+/* Эффект наведения (ТОЛЬКО СНАРУЖИ) */
+.service-card:hover {
+    transform: scale(1.05); /* Увеличивается карточка */
+    box-shadow: 0px 10px 25px rgba(255, 255, 255, 0.2);
+}
+
+/* === ВНУТРИ карточки анимации НЕТ === */
+.service-card * {
+    transition: none !important;
+}
+
+/* Фото внутри карточки */
+.service-img {
+    width: 35%;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-right: 20px;
+}
+
+/* Контейнер для текста и кнопки */
+.service-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Заголовки карточек */
+.service-card h3 {
+    color: #FFD700;
+    margin-bottom: 10px;
+}
+
+/* Кнопка "Подробнее" */
+.btn-primary {
+    background-color: #FFD700 !important;
+    color: #000 !important;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    width: fit-content;
+    align-self: flex-start;
+    margin-top: 10px;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-color: #FFC107 !important;
+}
+
+/* Кнопка "Оставить заявку" */
+.btn-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+    width: fit-content;
+    align-self: flex-start;
+    margin-top: 10px;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.btn-success:hover {
+    background-color: #218838 !important;
+}
+
+/* Кнопка "На главную" */
+.btn-secondary {
+    background-color: #FFD700;
+    border: none;
+    color: #000;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 5px;
+    width: fit-content;
+    align-self: flex-start;
+    margin-top: 10px;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.btn-secondary:hover {
+    background-color: #FFC107;
+}
+
+/* Убираем анимацию внутри карточки */
+.service-card:hover .service-img,
+.service-card:hover .service-info,
+.service-card:hover .btn-primary {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .service-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    .service-img {
+        width: 100%;
+        height: auto;
+        margin-bottom: 10px;
+    }
+    .btn-primary, .btn-success, .btn-secondary {
+        align-self: center;
+    }
+}
+/* Сообщение об успешной отправке */
+.flash-messages {
+    margin: 20px auto;
+    text-align: center;
+}
+
+.flash {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.flash-success {
+    background-color: #28a745;
+    color: white;
+}
+/* Общие стили формы */
+.contact-form {
+    background: #001f3f; /* Темно-синий фон */
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px;
+    margin: auto;
+    box-shadow: 0 0 15px rgba(0, 31, 63, 0.5);
+}
+
+/* Стили для полей ввода */
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background: #003366; /* Глубокий темно-синий */
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+}
+
+/* Подсказка внутри полей */
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+    color: #99c2ff; /* Светло-синий */
+}
+
+/* Стили для кнопки */
+.contact-form .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #004080; /* Темно-синий */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+}
+
+.contact-form .btn-primary:hover {
+    background: #0059b3; /* Ярче при наведении */
+}
+nav a {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background: #004080; /* Темно-синий */
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background 0.3s ease-in-out, transform 0.2s;
+}
+
+nav a:hover {
+    background: #0059b3; /* Более светлый синий при наведении */
+    transform: scale(1.05);
+}

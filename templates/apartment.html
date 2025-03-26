@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ремонт квартир</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container service-page">
+    <h1 class="text-center">Ремонт квартир</h1>
+    <img src="{{ url_for('static', filename='apartment.jpg') }}" class="service-img">
+    <p>
+        Мы предлагаем полный комплекс ремонта квартир: <br>
+        ✅ Демонтаж и подготовка<br>
+        ✅ Выравнивание стен и потолков<br>
+        ✅ Укладка плитки, ламината и паркета<br>
+        ✅ Установка сантехники и электропроводки<br>
+        ✅ Малярные и штукатурные работы<br>
+    </p>
+    <p class="price">💰 <strong>Цена:</strong> от <span>5000 руб/м²</span></p>
+    <a href="{{ url_for('contact') }}" class="btn btn-success">Оставить заявку</a>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">На главную</a>
+</div>
+
+</body>
+</html>
