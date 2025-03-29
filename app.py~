@@ -1,94 +1,75 @@
-import sqlite3
-import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# Путь к базе данных users.db в папке instance
-db_path = os.path.join(app.instance_path, 'users.db')
+# Конфигурация базы данных
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(basedir, 'instance', 'users.db')}"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Проверяем, существует ли папка instance
-if not os.path.exists(app.instance_path):
-    os.makedirs(app.instance_path)
+db = SQLAlchemy(app)
 
-# Подключение к базе данных
-connection = sqlite3.connect(db_path, check_same_thread=False)
-sql = connection.cursor()
 
-# Проверка и добавление колонки is_admin, если её нет
-try:
-    sql.execute("SELECT is_admin FROM users LIMIT 1;")
-except sqlite3.OperationalError:
-    sql.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0;")
-    connection.commit()
+# Модели базы данных
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
 
-# Создание таблиц, если их нет
-sql.execute('''CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    is_admin INTEGER DEFAULT 0
-)''')
 
-sql.execute('''CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    subject TEXT NOT NULL,
-    message TEXT NOT NULL
-)''')
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
 
-connection.commit()
 
-# Создание администратора, если его нет
-admin_email = 'admin@example.com'
-admin_password = 'admin123'
-sql.execute("SELECT * FROM users WHERE email = ?", (admin_email,))
-if not sql.fetchone():
-    sql.execute("INSERT INTO users (username, email, password, is_admin) VALUES (?, ?, ?, ?)",
-                ('Администратор', admin_email, admin_password, 1))
-    connection.commit()
+class Service(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+
+
+# Создание таблиц
+with app.app_context():
+    db.create_all()
+
+    # Создание администратора, если его нет
+    admin_email = 'admin@example.com'
+    admin_password = 'admin123'
+    if not User.query.filter_by(email=admin_email).first():
+        admin = User(username='Администратор', email=admin_email, password=admin_password)
+        db.session.add(admin)
+        db.session.commit()
 
 
 # Проверка пользователя при входе
 def check_user(email, password):
-    sql.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
-    return sql.fetchone()
+    return User.query.filter_by(email=email, password=password).first()
 
 
-# Проверка, существует ли пользователь
+# Проверка существования пользователя
 def user_exists(email):
-    sql.execute("SELECT id FROM users WHERE email = ?", (email,))
-    return sql.fetchone() is not None
+    return User.query.filter_by(email=email).first() is not None
 
 
 # Главная страница
 @app.route('/')
 def index():
-    return render_template('index.html')
+    services = Service.query.all()  # Загрузка всех услуг
+    return render_template('index.html', user=session.get('user'), services=services)
 
 
-# Страницы с услугами
-@app.route('/services/apartment')
-def apartment():
-    return render_template('apartment.html')
-
-
-@app.route('/services/office')
-def office():
-    return render_template('office.html')
-
-
-@app.route('/services/electric')
-def electric():
-    return render_template('electric.html')
-
-
-# Контактная форма
+# Форма контактов
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
+    subject = request.args.get('subject', '')
+
     if request.method == 'POST':
         name = request.form.get('name')
         email = request.form.get('email')
@@ -96,15 +77,16 @@ def contact():
         message = request.form.get('message')
 
         if name and email and subject and message:
-            sql.execute("INSERT INTO messages (name, email, subject, message) VALUES (?, ?, ?, ?);",
-                        (name, email, subject, message))
-            connection.commit()
+            new_message = Message(name=name, email=email, subject=subject, message=message)
+            db.session.add(new_message)
+            db.session.commit()
             flash('✅ Ваше сообщение отправлено!', 'success')
         else:
             flash('❌ Пожалуйста, заполните все поля.', 'danger')
 
         return redirect(url_for('contact'))
-    return render_template('contact.html')
+
+    return render_template('contact.html', subject=subject)
 
 
 # Регистрация
@@ -120,9 +102,9 @@ def register():
         elif user_exists(email):
             flash('❌ Пользователь с таким email уже зарегистрирован.', 'danger')
         else:
-            sql.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?);",
-                        (username, email, password))
-            connection.commit()
+            new_user = User(username=username, email=email, password=password)
+            db.session.add(new_user)
+            db.session.commit()
             flash('✅ Регистрация успешна! Войдите в аккаунт.', 'success')
             return redirect(url_for('login'))
 
@@ -135,17 +117,14 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-
         user = check_user(email, password)
         if user:
-            session['user'] = user[1]  # Имя пользователя
-            session['is_admin'] = user[4]  # Проверка роли администратора
-
-            flash(f'✅ Добро пожаловать, {user[1]}!', 'success')
-            if user[4]:  # Если is_admin == 1, перенаправляем в админ-панель
+            session['user'] = user.username
+            session['email'] = user.email
+            flash(f'✅ Добро пожаловать, {user.username}!', 'success')
+            if user.email == 'admin@example.com':
                 return redirect(url_for('admin_panel'))
             return redirect(url_for('index'))
-
         else:
             flash('❌ Неверный email или пароль.', 'danger')
 
@@ -156,21 +135,90 @@ def login():
 @app.route('/logout')
 def logout():
     session.pop('user', None)
-    session.pop('is_admin', None)
+    session.pop('email', None)
     flash('Вы вышли из системы.', 'info')
     return redirect(url_for('index'))
 
 
-# Панель администратора (просмотр сообщений)
+# Панель администратора
 @app.route('/admin/panel')
 def admin_panel():
-    if not session.get('is_admin'):
-        flash('❌ Доступ запрещён. Только для администраторов.', 'danger')
+    if session.get('email') != 'admin@example.com':
+        flash('❌ Доступ запрещён. Только для администратора.', 'danger')
         return redirect(url_for('index'))
 
-    sql.execute("SELECT * FROM messages;")
-    messages = sql.fetchall()
-    return render_template('admin_panel.html', messages=messages)
+    users = User.query.all()
+    messages = Message.query.all()
+    services = Service.query.all()
+
+    return render_template('admin_panel.html', users=users, messages=messages, services=services)
+
+
+# Удаление сообщения (только для администратора)
+@app.route('/admin/delete_message/<int:message_id>')
+def delete_message(message_id):
+    if session.get('email') != 'admin@example.com':
+        flash('❌ Доступ запрещён.', 'danger')
+        return redirect(url_for('index'))
+
+    message = Message.query.get(message_id)
+    if message:
+        db.session.delete(message)
+        db.session.commit()
+        flash('✅ Сообщение удалено.', 'success')
+
+    return redirect(url_for('admin_panel'))
+
+
+# Удаление пользователя (только для администратора)
+@app.route('/admin/delete_user/<int:user_id>')
+def delete_user(user_id):
+    if session.get('email') != 'admin@example.com':
+        flash('❌ Доступ запрещён.', 'danger')
+        return redirect(url_for('index'))
+
+    user = User.query.get(user_id)
+    if user and user.email != 'admin@example.com':
+        db.session.delete(user)
+        db.session.commit()
+        flash('✅ Пользователь удалён.', 'success')
+
+    return redirect(url_for('admin_panel'))
+
+
+# Добавление услуги (только для администратора)
+@app.route('/admin/add_service', methods=['POST'])
+def add_service():
+    if session.get('email') != 'admin@example.com':
+        flash('❌ Доступ запрещён.', 'danger')
+        return redirect(url_for('index'))
+
+    title = request.form.get('title')
+    description = request.form.get('description')
+
+    if title and description:
+        new_service = Service(title=title, description=description)
+        db.session.add(new_service)
+        db.session.commit()
+        flash('✅ Услуга добавлена!', 'success')
+
+    return redirect(url_for('admin_panel'))
+
+
+# Удаление услуги (только для администратора)
+@app.route('/admin/delete_service/<int:service_id>')
+def delete_service(service_id):
+    if session.get('email') != 'admin@example.com':
+        flash('❌ Доступ запрещён.', 'danger')
+        return redirect(url_for('index'))
+
+    service = Service.query.get(service_id)
+    if service:
+        db.session.delete(service)
+        db.session.commit()
+        flash('✅ Услуга удалена!', 'success')
+
+    return redirect(url_for('admin_panel'))
 
 
 if __name__ == '__main__':

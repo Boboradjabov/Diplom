@@ -45,24 +45,6 @@
     </div>
 </nav>
 
-<!-- Админ меню -->
-{% if is_admin %}
-<div class="container my-5">
-    <h2 class="text-center">Админ-панель</h2>
-    <div class="row">
-        <div class="col-md-4">
-            <a href="{{ url_for('add_card') }}" class="btn btn-primary w-100 mb-3">Добавить карточку</a>
-        </div>
-        <div class="col-md-4">
-            <a href="{{ url_for('messages') }}" class="btn btn-secondary w-100 mb-3">Просмотр сообщений</a>
-        </div>
-        <div class="col-md-4">
-            <a href="{{ url_for('users') }}" class="btn btn-success w-100 mb-3">Просмотр аккаунтов</a>
-        </div>
-    </div>
-</div>
-{% endif %}
-
 <!-- Главный блок -->
 <header class="header-section">
     <div class="container text-center">
@@ -74,14 +56,14 @@
 <!-- Блок с услугами -->
 <div class="container my-5">
     <div class="row">
-        {% for service in services %}
+        {% for service in ['apartment', 'office', 'electric'] %}
             <div class="col-md-12 mb-4">
-                <a href="{{ url_for('service_detail', service_id=service.id) }}" class="service-card d-flex">
-                    <img src="{{ url_for('static', filename=service.image) }}" class="service-img">
+                <a href="{{ url_for(service) }}" class="service-card d-flex">
+                    <img src="{{ url_for('static', filename=service + '.jpg') }}" class="service-img">
                     <div class="service-info">
-                        <h3>{{ service.title }}</h3>
-                        <p>{{ service.description }}</p>
-                        <p class="price">Цена: {{ service.price }}</p>
+                        <h3>Ремонт {{ service }}</h3>
+                        <p>Описание услуги {{ service }}.</p>
+                        <p class="price">Цена: уточняйте</p>
                     </div>
                 </a>
             </div>
